@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Build History{% endblock %}
+{% block heading %}◤ BUILDER — HISTORY{% endblock %}
+
+{% block body %}
+<div class="card" style="border-color:var(--pink)">
+  <h2 style="color:var(--pink)">All Builds ({{ builds|length }})</h2>
+  {% if builds and builds|length > 0 %}
+  <table>
+    <thead>
+      <tr><th>Created</th><th>Filename</th><th>Platform</th><th>OS</th><th>Arch</th><th>Child</th><th>Size</th><th>SHA-256</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for b in builds %}
+      <tr>
+        <td style="color:var(--dim);font-size:10px">{{ b['created_at'] }}</td>
+        <td style="font-size:11px;color:var(--cyan)">{{ b['filename'] }}</td>
+        <td>{{ b['platform'] }}</td>
+        <td>{{ b['os_version'] }}</td>
+        <td>{{ b['arch'] }}</td>
+        <td>{{ b['child_name'] or '—' }}</td>
+        <td>{{ human_size(b['size_bytes'] or 0) }}</td>
+        <td style="font-size:10px;color:var(--dim)">{{ (b['sha256'] or '')[:16] }}…</td>
+        <td style="text-align:right;white-space:nowrap">
+          <a href="{{ url_for('builder_download', filename=b['filename']) }}">
+            <button type="button" style="border-color:var(--cyan);color:var(--cyan);padding:2px 8px;font-size:10px">GET</button>
+          </a>
+          <form method="post" action="{{ url_for('builder_delete', bid=b['id']) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+            <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--dim)">No builds yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

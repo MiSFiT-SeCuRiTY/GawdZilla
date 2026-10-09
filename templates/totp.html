@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — 2FA{% endblock %}
+{% block heading %}TWO-FACTOR AUTH{% endblock %}
+
+{% block body %}
+
+{% if enabled %}
+<div class="card" style="max-width:560px">
+  <h2 style="color:var(--green)">2FA is enabled</h2>
+  <p style="color:var(--dim);font-size:12px;margin-top:10px">
+    Every login now requires a code from your authenticator app.
+  </p>
+  <form method="post" style="margin-top:14px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="disable">
+    <button type="submit" style="border-color:var(--red);color:var(--red)">▸ Disable 2FA</button>
+  </form>
+</div>
+
+{% else %}
+<div class="card" style="max-width:560px">
+  <h2>Enable 2FA</h2>
+
+  {% if err %}<div style="color:var(--red);margin-bottom:12px">{{ err }}</div>{% endif %}
+
+  <p style="color:var(--dim);font-size:12px;margin-bottom:14px">
+    1. Scan this QR code with Google Authenticator, Authy, or any TOTP app.
+  </p>
+  <div style="text-align:center;padding:14px;background:#05050a;border:1px solid var(--border);border-radius:4px;margin-bottom:14px">
+    <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR" style="max-width:220px">
+  </div>
+
+  <p style="color:var(--dim);font-size:11px;margin-bottom:14px">
+    Can't scan? Manual secret: <code style="color:var(--cyan)">{{ secret }}</code>
+  </p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="enable">
+    <input type="hidden" name="secret" value="{{ secret }}">
+
+    <div style="margin-bottom:14px">
+      <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">CODE FROM APP</label>
+      <input name="code" inputmode="numeric" autocomplete="one-time-code" required>
+    </div>
+    <button type="submit" style="width:100%;padding:10px">▸ Enable 2FA</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

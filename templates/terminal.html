@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Terminal{% endblock %}
+{% block heading %}REMOTE TERMINAL{% endblock %}
+
+{% block body %}
+
+<div class="card" style="border-color:var(--cyan);">
+  <h2>Terminal</h2>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:6px;">TARGET DEVICE</label>
+    <select id="devSelect" style="width:100%;padding:10px;background:#0d0d14;color:#c8c8d8;border:1px solid #00f0ff;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:13px;">
+      <option value="">— select a device —</option>
+      {% for d in devices %}
+      <option value="{{ d['id'] }}">{{ d['name'] }} ({{ d['platform'] }}) — {% if d['status']=='online' %}online{% else %}offline{% endif %}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div id="term" style="background:#05050a;border:1px solid #00f0ff;border-radius:4px;height:380px;overflow-y:auto;padding:12px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#00f0ff;white-space:pre-wrap;"></div>
+
+  <div style="margin-top:14px;padding:14px;background:#0a0a12;border:1px solid #00f0ff;border-radius:6px;">
+    <label style="display:block;color:#00f0ff;font-size:10px;letter-spacing:.2em;margin-bottom:8px;">COMMAND INPUT</label>
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <input id="cmdInput" type="text" autocomplete="off" spellcheck="false"
+             placeholder="command: ping, sysinfo, lock, open_url, launch ..."
+             style="flex:1;background:#000;color:#39ff14;caret-color:#39ff14;border:2px solid #39ff14;border-radius:4px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:bold;outline:none;">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <input id="payloadInput" type="text" autocomplete="off" spellcheck="false"
+             placeholder="payload (URL for open_url, package for launch) — optional"
+             style="flex:1;background:#000;color:#ff2bd6;caret-color:#ff2bd6;border:2px solid #ff2bd6;border-radius:4px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;">
+      <button id="sendBtn" type="button" style="padding:0 24px;background:#00f0ff;color:#000;border:1px solid #00f0ff;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:bold;letter-spacing:.15em;cursor:pointer;">SEND</button>
+    </div>
+    <p style="color:#5a5a72;font-size:11px;margin-top:8px;">
+      open_url payload example: https://example.com &nbsp;·&nbsp; launch payload example: com.android.settings
+    </p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var term     = document.getElementById('term');
+  var devSel   = document.getElementById('devSelect');
+  var cmdIn    = document.getElementById('cmdInput');
+  var payIn    = document.getElementById('payloadInput');
+  var sendBtn  = document.getElementById('sendBtn');
+  var CSRF     = "{{ csrf_token() }}";
+
+  function append(text, color){
+    var el = document.createElement('div');
+    el.style.color = color || '#00f0ff';
+    el.style.whiteSpace = 'pre-wrap';
+    el.textContent = text;
+    term.appendChild(el);
+    term.scrollTop = term.scrollHeight;
+  }
+
+  append('[GawdZilla Terminal v1.0]', '#ff2bd6');
+  append('Pick a device above. Type command + optional payload, press Enter.', '#5a5a72');
+  append('', '');
+
+  async function send(){
+    var did = devSel.value;
+    var cmd = (cmdIn.value || '').trim();
+    var payload = (payIn.value || '').trim();
+    if (!did){ append('! select a device first', '#ff2b5e'); return; }
+    if (!cmd) return;
+    cmdIn.value = ''; payIn.value = '';
+    append('gawdzilla> ' + cmd + (payload ? '  ::' + payload : ''), '#ff2bd6');
+    try {
+      var r = await fetch('/api/device/' + did + '/command', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'X-CSRFToken': CSRF
+        },
+        body: JSON.stringify({ cmd: cmd, payload: payload })
+      });
+      var text = await r.text();
+      var j;
+      try { j = JSON.parse(text); }
+      catch(_) { append('[error] server returned non-JSON (status ' + r.status + '): ' + text.slice(0, 200), '#ff2b5e'); return; }
+      if (j.ok) append('[queued] ' + cmd, '#5a5a72');
+      else append('[error] ' + (j.error || 'unknown'), '#ff2b5e');
+    } catch(e){
+      append('[error] ' + e.message, '#ff2b5e');
+    }
+  }
+
+  sendBtn.addEventListener('click', send);
+  cmdIn.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); send(); }});
+  payIn.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); send(); }});
+
+  term.addEventListener('click', function(){ cmdIn.focus(); });
+  cmdIn.focus();
+
+  try {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var ws = new WebSocket(proto + '//' + location.host + '/ws/live');
+    ws.onmessage = function(m){
+      try {
+        var ev = JSON.parse(m.data);
+        if (ev.kind === 'command_result') append('[result] ' + JSON.stringify(ev.payload), '#39ff14');
+      } catch(e){}
+    };
+  } catch(e){}
+})();
+</script>
+
+{% endblock %}

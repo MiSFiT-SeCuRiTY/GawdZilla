@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — {% if view=='children' %}Children{% else %}Devices{% endif %}{% endblock %}
+{% block heading %}{% if view=='children' %}CHILDREN{% else %}DEVICES{% endif %}{% endblock %}
+
+{% block body %}
+
+{% if view == 'children' %}
+
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Add Child</h2>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+      <div class="field" style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">NAME</label>
+        <input name="name" required>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">BIRTHDATE (optional)</label>
+        <input name="birthdate" type="date">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">NOTES (optional)</label>
+        <input name="notes">
+      </div>
+      <button type="submit">▸ Create Child</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Children ({{ children|length }})</h2>
+    {% if children and children|length > 0 %}
+    <table>
+      <thead><tr><th>Name</th><th>Birthdate</th><th>Notes</th><th></th></tr></thead>
+      <tbody>
+        {% for c in children %}
+        <tr>
+          <td>{{ c['name'] }}</td>
+          <td>{{ c['birthdate'] or '—' }}</td>
+          <td>{{ c['notes'] or '—' }}</td>
+          <td style="text-align:right">
+            <form method="post" action="{{ url_for('child_delete', cid=c['id']) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+              <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No children yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% else %}
+
+<div class="card">
+  <h2>Devices ({{ devices|length }})</h2>
+  {% if devices and devices|length > 0 %}
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Child</th><th>Platform</th><th>OS</th><th>Last Seen</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for d in devices %}
+      <tr>
+        <td>{{ d['name'] or '—' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('device_assign', did=d['id']) }}" style="display:flex;gap:6px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+            <select name="child_id" style="padding:2px 6px;font-size:11px">
+              <option value="">— none —</option>
+              {% for c in children %}
+              <option value="{{ c['id'] }}" {% if d['child_id'] == c['id'] %}selected{% endif %}>{{ c['name'] }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" style="padding:2px 8px;font-size:10px">SET</button>
+          </form>
+        </td>
+        <td>{{ d['platform'] or '—' }}</td>
+        <td>{{ d['os_version'] or '—' }}</td>
+        <td>{{ d['last_seen'] or '—' }}</td>
+        <td>
+          {% if d['status'] == 'online' %}<span class="pill online">Online</span>
+          {% else %}<span class="pill offline">Offline</span>{% endif %}
+        </td>
+        <td style="text-align:right">
+          <form method="post" action="{{ url_for('device_delete', did=d['id']) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+            <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--dim)">No devices enrolled yet. Use <b style="color:var(--pink)">BUILDER → NEW BUILD</b> to create an agent.</p>
+  {% endif %}
+</div>
+
+{% endif %}
+
+{% endblock %}

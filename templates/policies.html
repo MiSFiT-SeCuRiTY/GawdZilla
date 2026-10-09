@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Policies{% endblock %}
+{% block heading %}POLICIES{% endblock %}
+
+{% block body %}
+
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>New Policy</h2>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">NAME</label>
+        <input name="name" required placeholder="e.g. School Night">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">SCOPE</label>
+        <select name="scope">
+          <option value="family">Family (all devices)</option>
+          <option value="child">Specific child</option>
+          <option value="device">Specific device</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">SCOPE ID (optional)</label>
+        <input name="scope_id" placeholder="child/device id">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">SCREEN TIME (minutes/day)</label>
+        <input name="screen_time" type="number" value="120" min="0">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">BEDTIME START</label>
+          <input name="bedtime_start" type="time" value="21:00">
+        </div>
+        <div>
+          <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">BEDTIME END</label>
+          <input name="bedtime_end" type="time" value="07:00">
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">BLOCKED APPS (comma-separated)</label>
+        <input name="blocked_apps" placeholder="tiktok.exe, com.zhiliaoapp.musically">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">BLOCKED SITES (comma-separated)</label>
+        <input name="blocked_sites" placeholder="tiktok.com, discord.com">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="color:var(--dim);font-size:11px">
+          <input type="checkbox" name="internet_pause" style="width:auto;margin-right:6px">
+          Internet pause enabled
+        </label>
+      </div>
+      <button type="submit">▸ Create Policy</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Policies ({{ policies|length }})</h2>
+    {% if policies and policies|length > 0 %}
+    <table>
+      <thead><tr><th>Name</th><th>Scope</th><th>Enabled</th><th></th></tr></thead>
+      <tbody>
+        {% for p in policies %}
+        <tr>
+          <td>{{ p['name'] }}</td>
+          <td>{{ p['scope'] }}{% if p['scope_id'] %} #{{ p['scope_id'] }}{% endif %}</td>
+          <td>{% if p['enabled'] %}<span class="pill online">ON</span>{% else %}<span class="pill offline">OFF</span>{% endif %}</td>
+          <td style="text-align:right">
+            <form method="post" action="{{ url_for('policy_delete', pid=p['id']) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+              <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No policies yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

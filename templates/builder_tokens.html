@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Enrollment Tokens{% endblock %}
+{% block heading %}◤ BUILDER — TOKENS{% endblock %}
+
+{% block body %}
+<div class="card" style="border-color:var(--pink)">
+  <h2 style="color:var(--pink)">Enrollment Tokens ({{ tokens|length }})</h2>
+  {% if tokens and tokens|length > 0 %}
+  <table>
+    <thead>
+      <tr><th>Token</th><th>Child</th><th>Platform</th><th>Expires</th><th>Used</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for t in tokens %}
+      <tr>
+        <td style="color:var(--cyan);font-size:11px">{{ t['token'] }}</td>
+        <td>{{ t['child_id'] or '—' }}</td>
+        <td>{{ t['platform'] or '—' }}</td>
+        <td style="color:var(--dim);font-size:11px">{{ t['expires_at'] or '—' }}</td>
+        <td>{% if t['used'] %}<span class="pill offline">USED</span>{% else %}<span class="pill online">ACTIVE</span>{% endif %}</td>
+        <td style="text-align:right">
+          {% if not t['used'] %}
+          <form method="post" action="{{ url_for('builder_token_revoke', tid=t['id']) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+            <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">REVOKE</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--dim)">No tokens issued yet. Create a build first.</p>
+  {% endif %}
+</div>
+{% endblock %}

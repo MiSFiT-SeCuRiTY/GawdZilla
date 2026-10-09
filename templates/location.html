@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Location{% endblock %}
+{% block heading %}LOCATION{% endblock %}
+
+{% block body %}
+
+<div class="card" style="margin-bottom:14px;border-color:var(--cyan)">
+  <h2>Live Map</h2>
+  <div id="map" style="height:420px;border-radius:4px;background:#0a0a0f"></div>
+</div>
+
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Add Geofence</h2>
+    <form method="post" action="{{ url_for('geofence_create') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">NAME</label>
+        <input name="name" placeholder="School, Home" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">LATITUDE</label>
+          <input name="lat" type="number" step="any" required>
+        </div>
+        <div>
+          <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">LONGITUDE</label>
+          <input name="lon" type="number" step="any" required>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">RADIUS (m)</label>
+        <input name="radius_m" type="number" value="150" required>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="color:var(--text);font-size:12px;display:block;margin-bottom:6px">
+          <input type="checkbox" name="notify_on_enter" checked style="width:auto;margin-right:6px"> Notify on enter
+        </label>
+        <label style="color:var(--text);font-size:12px">
+          <input type="checkbox" name="notify_on_exit" checked style="width:auto;margin-right:6px"> Notify on exit
+        </label>
+      </div>
+      <button type="submit">▸ Add Geofence</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Geofences ({{ geofences|length }})</h2>
+    {% if geofences %}
+    <table>
+      <thead><tr><th>Name</th><th>Center</th><th>Radius</th><th></th></tr></thead>
+      <tbody>
+        {% for g in geofences %}
+        <tr>
+          <td>{{ g['name'] }}</td>
+          <td style="font-size:11px;color:var(--dim)">{{ '%.4f'|format(g['lat']) }}, {{ '%.4f'|format(g['lon']) }}</td>
+          <td>{{ g['radius_m']|int }} m</td>
+          <td style="text-align:right">
+            <form method="post" action="{{ url_for('geofence_delete', gid=g['id']) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+              <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No geofences yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>Device Locations</h2>
+  {% if devices %}
+  <table>
+    <thead><tr><th>Device</th><th>Platform</th><th>Last Position</th><th>Accuracy</th><th>Time</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for d in devices %}
+      <tr>
+        <td>{{ d['name'] }}</td>
+        <td>{{ d['platform'] }}</td>
+        <td style="font-size:11px">
+          {% if latest.get(d['id']) %}
+            {{ '%.5f'|format(latest[d['id']]['lat']) }}, {{ '%.5f'|format(latest[d['id']]['lon']) }}
+          {% else %}—{% endif %}
+        </td>
+        <td>{% if latest.get(d['id']) and latest[d['id']]['accuracy_m'] %}{{ latest[d['id']]['accuracy_m']|int }} m{% else %}—{% endif %}</td>
+        <td style="font-size:11px;color:var(--dim)">{{ latest.get(d['id'], {}).get('ts', '—') if latest.get(d['id']) else '—' }}</td>
+        <td>{% if d['status']=='online' %}<span class="pill online">Online</span>{% else %}<span class="pill offline">Offline</span>{% endif %}</td>
+        <td style="text-align:right">
+          <a href="{{ url_for('device_detail_page', did=d['id']) }}">
+            <button type="button" style="padding:2px 8px;font-size:10px">DETAIL</button>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--dim)">No devices enrolled.</p>
+  {% endif %}
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+  const map = L.map('map').setView([20, 0], 2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors, © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  const markers = {};
+  let bounds = [];
+
+  async function refresh(){
+    try {
+      const [locRes, fenceRes] = await Promise.all([
+        fetch('/api/locations/latest').then(r => r.json()),
+        fetch('/api/geofences').then(r => r.json())
+      ]);
+
+      // Devices
+      (locRes.devices || []).forEach(d => {
+        const color = d.status === 'online' ? '#39ff14' : '#5a5a72';
+        if (!markers[d.device_id]) {
+          markers[d.device_id] = L.circleMarker([d.lat, d.lon], {
+            radius: 8, color: color, fillColor: color, fillOpacity: .8, weight: 2
+          }).addTo(map);
+        } else {
+          markers[d.device_id].setLatLng([d.lat, d.lon]);
+          markers[d.device_id].setStyle({ color: color, fillColor: color });
+        }
+        markers[d.device_id].bindPopup(
+          `<b>${d.name}</b><br>${d.platform} — ${d.status}<br>±${Math.round(d.accuracy_m||0)} m<br>${d.ts}`
+        );
+        bounds.push([d.lat, d.lon]);
+      });
+
+      // Geofence circles
+      (fenceRes.geofences || []).forEach(g => {
+        L.circle([g.lat, g.lon], {
+          radius: g.radius_m, color: '#ff2bd6', fillColor: '#ff2bd6', fillOpacity: .08, weight: 1, dashArray: '4,4'
+        }).addTo(map).bindPopup(`<b>${g.name}</b><br>radius ${g.radius_m} m`);
+        bounds.push([g.lat, g.lon]);
+      });
+
+      if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    } catch (e) {}
+  }
+
+  refresh();
+  setInterval(refresh, 20000);
+})();
+</script>
+
+{% endblock %}

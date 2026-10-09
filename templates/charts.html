@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Metrics{% endblock %}
+{% block heading %}DEVICE METRICS{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+
+<div class="card">
+  <h2>Select Device</h2>
+  <select id="devSelect" style="width:100%;padding:10px;background:#0d0d14;color:#c8c8d8;border:1px solid #00f0ff;border-radius:4px">
+    <option value="">— select a device —</option>
+    {% for d in devices %}
+    <option value="{{ d['id'] }}">{{ d['name'] }} ({{ d['platform'] }})</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="grid cols-2" style="margin-top:14px">
+  <div class="card">
+    <h2>CPU / RAM</h2>
+    <canvas id="cpuChart" height="180"></canvas>
+  </div>
+  <div class="card">
+    <h2>Disk / Battery</h2>
+    <canvas id="diskChart" height="180"></canvas>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>Recent Alerts</h2>
+  <div id="alertsBox" style="font-size:12px;max-height:220px;overflow-y:auto"></div>
+</div>
+
+<script>
+(function(){
+  var devSelect = document.getElementById('devSelect');
+  var cpuChart = null, diskChart = null;
+  var alertsBox = document.getElementById('alertsBox');
+
+  function makeChart(canvas, label1, label2, color1, color2){
+    return new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: label1, data: [], borderColor: color1, backgroundColor: color1+'33', tension: .2, pointRadius: 0 },
+          { label: label2, data: [], borderColor: color2, backgroundColor: color2+'33', tension: .2, pointRadius: 0 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#c8c8d8', font: { family: 'JetBrains Mono' } } } },
+        scales: {
+          x: { ticks: { color: '#5a5a72', maxTicksLimit: 6 }, grid: { color: '#1a1a28' } },
+          y: { beginAtZero: true, max: 100, ticks: { color: '#5a5a72' }, grid: { color: '#1a1a28' } }
+        }
+      }
+    });
+  }
+
+  cpuChart  = makeChart(document.getElementById('cpuChart'),  'CPU %', 'RAM %', '#00f0ff', '#ff2bd6');
+  diskChart = makeChart(document.getElementById('diskChart'), 'Disk %', 'Battery %', '#39ff14', '#ffb000');
+
+  async function load(did){
+    if (!did) return;
+    try {
+      var r = await fetch('/api/metrics/' + did + '?limit=200');
+      var j = await r.json();
+      if (!j.ok) return;
+      var pts = j.points;
+      var labels = pts.map(p => p.ts.slice(11,19));
+
+      cpuChart.data.labels = labels;
+      cpuChart.data.datasets[0].data = pts.map(p => p.cpu);
+      cpuChart.data.datasets[1].data = pts.map(p => p.ram);
+      cpuChart.update('none');
+
+      diskChart.data.labels = labels;
+      diskChart.data.datasets[0].data = pts.map(p => p.disk);
+      diskChart.data.datasets[1].data = pts.map(p => p.battery);
+      diskChart.update('none');
+    } catch(e){}
+  }
+
+  async function loadAlerts(){
+    try {
+      var r = await fetch('/api/alerts');
+      var j = await r.json();
+      alertsBox.innerHTML = '';
+      if (j.ok && j.alerts.length){
+        j.alerts.forEach(a => {
+          var row = document.createElement('div');
+          var color = a.level === 'danger' ? 'var(--red)' :
+                      a.level === 'warn' ? 'var(--amber)' : 'var(--cyan)';
+          row.innerHTML = '<span style="color:' + color + '">●</span> ' +
+                          '<b>' + a.title + '</b> — ' + (a.body || '') +
+                          ' <span style="color:var(--dim)">' + a.ts + '</span>';
+          alertsBox.appendChild(row);
+        });
+      } else {
+        alertsBox.innerHTML = '<div style="color:var(--dim)">No alerts yet.</div>';
+      }
+    } catch(e){}
+  }
+
+  devSelect.addEventListener('change', () => load(devSelect.value));
+
+  // auto-select first device
+  if (devSelect.options.length > 1){
+    devSelect.selectedIndex = 1;
+    load(devSelect.value);
+  }
+  loadAlerts();
+  setInterval(() => { if (devSelect.value) load(devSelect.value); loadAlerts(); }, 15000);
+})();
+</script>
+{% endblock %}

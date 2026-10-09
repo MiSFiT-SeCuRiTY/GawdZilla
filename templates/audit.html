@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Audit{% endblock %}
+{% block heading %}AUDIT LOG{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>Recent Activity</h2>
+  {% if rows and rows|length > 0 %}
+  <table>
+    <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r['ts'] }}</td>
+        <td>{{ r['actor'] }}</td>
+        <td>{{ r['action'] }}</td>
+        <td>{{ r['target'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--dim)">No activity yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Monitor{% endblock %}
+{% block heading %}LIVE MONITOR{% endblock %}
+
+{% block body %}
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Devices</h2>
+    {% if devices and devices|length > 0 %}
+    <table>
+      <thead><tr><th>Name</th><th>Platform</th><th>Last Seen</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for d in devices %}
+        <tr>
+          <td>{{ d['name'] }}</td>
+          <td>{{ d['platform'] }}</td>
+          <td>{{ d['last_seen'] or '—' }}</td>
+          <td>{% if d['status']=='online' %}<span class="pill online">Online</span>{% else %}<span class="pill offline">Offline</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No devices.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Live Feed <span class="cursor"></span></h2>
+    <div id="feed" style="font-size:12px;max-height:420px;overflow-y:auto;background:#0d0d14;padding:10px;border-radius:4px">
+      {% for e in events %}
+      <div style="color:var(--dim)">[{{ e['ts'] }}] <span style="color:var(--cyan)">{{ e['kind'] }}</span> {{ e['payload'] }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const feed = document.getElementById('feed');
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}/ws/live`);
+  ws.onmessage = (m) => {
+    try {
+      const ev = JSON.parse(m.data);
+      if (ev.kind === 'ping' || ev.kind === 'hello') return;
+      const line = document.createElement('div');
+      line.style.color = 'var(--dim)';
+      line.innerHTML = `[${new Date().toISOString().slice(11,19)}] <span style="color:var(--cyan)">${ev.kind}</span> ${JSON.stringify(ev.payload)}`;
+      feed.prepend(line);
+      while (feed.children.length > 200) feed.removeChild(feed.lastChild);
+    } catch(e){}
+  };
+</script>
+{% endblock %}

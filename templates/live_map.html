@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Live Map{% endblock %}
+{% block heading %}LIVE MAP{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet.css') }}">
+<script src="{{ url_for('static', filename='vendor/leaflet.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+<div class="card" style="border-color:var(--cyan)">
+  <h2>All Devices</h2>
+  <div id="map" style="height:520px;width:100%;background:#05050a;border:1px solid var(--border);border-radius:4px"></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>Devices on Map</h2>
+  <div id="legend" style="font-size:12px;color:var(--dim)">Loading…</div>
+</div>
+
+<script>
+(function(){
+  var map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19
+  }).addTo(map);
+
+  var markers = {};   // device_id -> marker
+  var legend = document.getElementById('legend');
+
+  function render(points){
+    if (!points.length){
+      legend.textContent = 'No locations yet. Devices must have location permission granted.';
+      return;
+    }
+    legend.innerHTML = '';
+    var bounds = [];
+    points.forEach(function(p){
+      var lat = p.lat, lon = p.lon;
+      if (markers[p.device_id]) {
+        markers[p.device_id].setLatLng([lat, lon]);
+      } else {
+        var m = L.marker([lat, lon]).addTo(map);
+        m.bindPopup('<b>' + (p.device_name || p.device_id) + '</b><br>Last: ' + p.ts);
+        markers[p.device_id] = m;
+      }
+      bounds.push([lat, lon]);
+
+      var row = document.createElement('div');
+      row.style.marginBottom = '4px';
+      row.innerHTML = '<span style="color:var(--cyan)">●</span> ' +
+                      (p.device_name || p.device_id) + ' — ' +
+                      lat.toFixed(4) + ', ' + lon.toFixed(4) +
+                      ' <span style="color:var(--dim)">(' + p.ts + ')</span>';
+      legend.appendChild(row);
+    });
+    if (bounds.length === 1) map.setView(bounds[0], 14);
+    else if (bounds.length > 1) map.fitBounds(bounds, { padding: [40,40] });
+  }
+
+  async function refresh(){
+    try {
+      var r = await fetch('/api/locations/latest');
+      var j = await r.json();
+      if (j.ok) render(j.points);
+    } catch(e){}
+  }
+
+  refresh();
+  setInterval(refresh, 15000);
+
+  // Also update live on location events
+  try {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var ws = new WebSocket(proto + '//' + location.host + '/ws/live');
+    ws.onmessage = function(m){
+      try {
+        var ev = JSON.parse(m.data);
+        if (ev.kind === 'location' || ev.kind === 'heartbeat') refresh();
+      } catch(e){}
+    };
+  } catch(e){}
+})();
+</script>
+{% endblock %}

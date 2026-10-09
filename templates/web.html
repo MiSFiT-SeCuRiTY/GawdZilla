@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Web Filter{% endblock %}
+{% block heading %}WEB FILTER{% endblock %}
+
+{% block body %}
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Add Domain Rule</h2>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">DOMAIN</label>
+        <input name="domain" placeholder="tiktok.com" required>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">ACTION</label>
+        <select name="action">
+          <option value="block">Block</option>
+          <option value="allow">Allow</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">CATEGORY (optional)</label>
+        <input name="category" placeholder="social, games, adult">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">DEVICE (optional)</label>
+        <select name="device_id">
+          <option value="">— all —</option>
+          {% for d in devices %}<option value="{{ d['id'] }}">{{ d['name'] }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">CHILD (optional)</label>
+        <select name="child_id">
+          <option value="">— all —</option>
+          {% for c in children %}<option value="{{ c['id'] }}">{{ c['name'] }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit">▸ Add Rule</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Rules ({{ rules|length }})</h2>
+    {% if rules and rules|length > 0 %}
+    <table>
+      <thead><tr><th>Domain</th><th>Action</th><th>Category</th><th>Scope</th><th></th></tr></thead>
+      <tbody>
+        {% for r in rules %}
+        <tr>
+          <td style="font-size:11px;color:var(--cyan)">{{ r['domain'] }}</td>
+          <td>
+            {% if r['action'] == 'block' %}<span class="pill danger">BLOCK</span>
+            {% else %}<span class="pill online">ALLOW</span>{% endif %}
+          </td>
+          <td style="font-size:11px;color:var(--dim)">{{ r['category'] or '—' }}</td>
+          <td style="font-size:11px;color:var(--dim)">
+            {% if r['device_name'] %}{{ r['device_name'] }}{% elif r['child_name'] %}{{ r['child_name'] }}{% else %}all{% endif %}
+          </td>
+          <td style="text-align:right">
+            <form method="post" action="{{ url_for('web_rule_delete', rid=r['id']) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+              <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No web rules yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

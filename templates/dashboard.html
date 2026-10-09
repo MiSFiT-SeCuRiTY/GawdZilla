@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Dashboard{% endblock %}
+{% block heading %}SYSTEM STATUS{% endblock %}
+
+{% block body %}
+
+<div class="grid cols-4">
+  <div class="card">
+    <div class="metric">{{ device_count }}</div>
+    <div class="metric-label">Devices</div>
+  </div>
+  <div class="card">
+    <div class="metric green">{{ online_count }}</div>
+    <div class="metric-label">Online</div>
+  </div>
+  <div class="card">
+    <div class="metric pink">{{ child_count }}</div>
+    <div class="metric-label">Children</div>
+  </div>
+  <div class="card">
+    <div class="metric amber">{{ policy_count }}</div>
+    <div class="metric-label">Active Policies</div>
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:14px">
+
+  <div class="card">
+    <h2>Live Feed</h2>
+    <div id="dashFeed" style="color:var(--dim);font-size:12px;height:220px;overflow-y:auto">
+      [{{ now }}] <span style="color:var(--green)">system ok</span> — awaiting devices<span class="cursor"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Recent Devices</h2>
+    {% if recent_devices and recent_devices|length > 0 %}
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Platform</th><th>Last Seen</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for d in recent_devices %}
+          <tr>
+            <td>{{ d['name'] or '—' }}</td>
+            <td>{{ d['platform'] or '—' }}</td>
+            <td>{{ d['last_seen'] or '—' }}</td>
+            <td>
+              {% if d['status'] == 'online' %}
+                <span class="pill online">Online</span>
+              {% else %}
+                <span class="pill offline">Offline</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div style="color:var(--dim);padding:12px 0">
+        No devices enrolled yet. Use
+        <a href="{{ url_for('builder_page') }}" style="color:var(--pink)">BUILDER → NEW BUILD</a>
+        to create an agent.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>Server</h2>
+  <table>
+    <tbody>
+      <tr><td style="width:180px;color:var(--dim)">Version</td><td>v1.0.0</td></tr>
+      <tr><td style="color:var(--dim)">Author</td><td>MiSFiT SeCuRiTY</td></tr>
+      <tr><td style="color:var(--dim)">Snapshot (UTC)</td><td>{{ now }}</td></tr>
+      <tr><td style="color:var(--dim)">Session</td><td><span class="pill online">Authenticated</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function(){
+  var feed = document.getElementById('dashFeed');
+  if (!feed) return;
+  try {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var ws = new WebSocket(proto + '//' + location.host + '/ws/live');
+    ws.onmessage = function(m){
+      try {
+        var ev = JSON.parse(m.data);
+        if (ev.kind === 'ping' || ev.kind === 'hello') return;
+        var line = document.createElement('div');
+        line.style.color = 'var(--dim)';
+        line.innerHTML = '[' + new Date().toISOString().slice(11,19) + '] ' +
+                         '<span style="color:var(--cyan)">' + ev.kind + '</span> ' +
+                         JSON.stringify(ev.payload);
+        feed.prepend(line);
+        while (feed.children.length > 100) feed.removeChild(feed.lastChild);
+      } catch(e){}
+    };
+  } catch(e){}
+})();
+</script>
+
+{% endblock %}

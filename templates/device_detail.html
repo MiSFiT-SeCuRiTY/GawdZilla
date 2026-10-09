@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Device {{ device['name'] }}{% endblock %}
+{% block heading %}DEVICE — {{ device['name'] }}{% endblock %}
+
+{% block body %}
+
+<div class="grid cols-4">
+  <div class="card"><div class="metric">{{ device['platform'] or '—' }}</div><div class="metric-label">Platform</div></div>
+  <div class="card"><div class="metric">{{ device['os_version'] or '—' }}</div><div class="metric-label">OS</div></div>
+  <div class="card"><div class="metric">{{ device['child_name'] or '—' }}</div><div class="metric-label">Child</div></div>
+  <div class="card"><div class="metric {% if device['status']=='online' %}green{% endif %}">{{ device['status'] }}</div><div class="metric-label">Status</div></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>Location</h2>
+  {% if location %}
+  <p>Last: {{ '%.5f'|format(location['lat']) }}, {{ '%.5f'|format(location['lon']) }}
+     ({{ location['accuracy_m']|int if location['accuracy_m'] else '?' }} m) at {{ location['ts'] }}</p>
+  {% else %}<p style="color:var(--dim)">No location yet.</p>{% endif %}
+</div>
+
+<div class="grid cols-2" style="margin-top:14px">
+  <div class="card">
+    <h2>Recent Commands</h2>
+    {% if commands %}
+    <table>
+      <thead><tr><th>Time</th><th>Cmd</th><th>Status</th><th>Result</th></tr></thead>
+      <tbody>
+        {% for c in commands %}
+        <tr>
+          <td style="color:var(--dim);font-size:10px">{{ c['created_at'] }}</td>
+          <td>{{ c['cmd'] }}</td>
+          <td>{{ c['status'] }}</td>
+          <td style="color:var(--dim);font-size:11px">{{ (c['result'] or '')[:60] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p style="color:var(--dim)">No commands yet.</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Recent Events</h2>
+    {% if events %}
+    <div style="max-height:320px;overflow-y:auto;font-size:11px">
+      {% for e in events %}
+      <div style="color:var(--dim)">[{{ e['ts'] }}] <span style="color:var(--cyan)">{{ e['kind'] }}</span> {{ e['payload'][:100] }}</div>
+      {% endfor %}
+    </div>
+    {% else %}<p style="color:var(--dim)">No events yet.</p>{% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <a href="{{ url_for('devices_page') }}"><button type="button">← Back to Devices</button></a>
+</div>
+
+{% endblock %}

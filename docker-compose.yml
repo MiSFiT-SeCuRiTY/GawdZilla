@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  gawdzilla:
+    build: .
+    container_name: gawdzilla
+    restart: unless-stopped
+    ports:
+      - "7777:7777"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - GZ_PORT=7777
+      - GZ_SECRET=change-me-in-production

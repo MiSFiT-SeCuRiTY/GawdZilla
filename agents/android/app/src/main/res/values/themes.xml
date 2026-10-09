@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.GawdZilla" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#00F0FF</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorSecondary">#FF2BD6</item>
+        <item name="android:colorBackground">#0A0A0F</item>
+        <item name="android:statusBarColor">#0A0A0F</item>
+        <item name="android:navigationBarColor">#0A0A0F</item>
+    </style>
+</resources>

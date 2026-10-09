@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Sync{% endblock %}
+{% block heading %}SYNC{% endblock %}
+
+{% block body %}
+
+<div class="card" style="margin-bottom:14px">
+  <div style="display:flex;gap:10px">
+    <a href="{{ url_for('sync_page', tab='files') }}">
+      <button type="button" style="{% if tab=='files' %}background:var(--cyan);color:#000{% endif %}">Files</button>
+    </a>
+    <a href="{{ url_for('sync_page', tab='clips') }}">
+      <button type="button" style="{% if tab=='clips' %}background:var(--cyan);color:#000{% endif %}">Clipboard</button>
+    </a>
+    <a href="{{ url_for('sync_page', tab='notifs') }}">
+      <button type="button" style="{% if tab=='notifs' %}background:var(--cyan);color:#000{% endif %}">Notifications</button>
+    </a>
+  </div>
+</div>
+
+<div class="card">
+
+{% if tab == 'files' %}
+  <h2>Files ({{ rows|length }})</h2>
+  {% if rows %}
+  <table>
+    <thead><tr><th>Time</th><th>Device</th><th>Direction</th><th>Filename</th><th>Size</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="color:var(--dim);font-size:11px">{{ r['created_at'] }}</td>
+        <td>{{ r['device_name'] or '—' }}</td>
+        <td>{% if r['direction']=='up' %}<span class="pill online">UP</span>{% else %}<span class="pill warn">DOWN</span>{% endif %}</td>
+        <td style="color:var(--cyan);font-size:11px">{{ r['filename'] }}</td>
+        <td>{{ (r['size_bytes'] or 0) }}</td>
+        <td>{{ r['status'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p style="color:var(--dim)">No file transfers yet.</p>{% endif %}
+
+{% elif tab == 'clips' %}
+  <h2>Clipboard ({{ rows|length }})</h2>
+  {% if rows %}
+  <table>
+    <thead><tr><th>Time</th><th>Device</th><th>Direction</th><th>Content</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="color:var(--dim);font-size:11px">{{ r['created_at'] }}</td>
+        <td>{{ r['device_name'] or '—' }}</td>
+        <td>{% if r['direction']=='up' %}<span class="pill online">UP</span>{% else %}<span class="pill warn">DOWN</span>{% endif %}</td>
+        <td style="font-size:11px;color:var(--cyan)">{{ (r['content'] or '')[:120] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p style="color:var(--dim)">No clipboard entries yet.</p>{% endif %}
+
+{% else %}
+  <h2>Notifications ({{ rows|length }})</h2>
+  {% if rows %}
+  <table>
+    <thead><tr><th>Time</th><th>Device</th><th>Package</th><th>Title</th><th>Body</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="color:var(--dim);font-size:11px">{{ r['ts'] }}</td>
+        <td>{{ r['device_name'] or '—' }}</td>
+        <td style="font-size:11px;color:var(--cyan)">{{ r['pkg'] }}</td>
+        <td>{{ r['title'] }}</td>
+        <td style="font-size:11px;color:var(--dim)">{{ (r['body'] or '')[:80] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p style="color:var(--dim)">No notifications yet.</p>{% endif %}
+
+{% endif %}
+
+</div>
+{% endblock %}

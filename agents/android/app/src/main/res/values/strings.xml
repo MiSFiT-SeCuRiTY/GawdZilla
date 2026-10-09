@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GawdZilla Agent</string>
+    <string name="notif_channel_id">gawdzilla_agent</string>
+    <string name="notif_channel_name">GawdZilla Agent</string>
+    <string name="notif_title">GawdZilla Agent is active</string>
+    <string name="notif_text">This device is managed by your parent.</string>
+    <string name="device_admin_desc">GawdZilla uses device administrator to enforce parental controls (screen time, app limits). It cannot be uninstalled without the parent\'s password.</string>
+</resources>

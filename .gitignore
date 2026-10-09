@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Runtime data
+data/*
+!data/.gitkeep
+!data/logs/
+!data/logs/.gitkeep
+!data/backups/
+!data/backups/.gitkeep
+!data/builds/
+!data/builds/.gitkeep
+!data/media/
+!data/media/.gitkeep
+!data/certs/
+!data/certs/.gitkeep
+!data/uploads/
+!data/uploads/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+*.spec.bak
+
+# Android
+agents/android/.gradle/
+agents/android/build/
+agents/android/app/build/
+agents/android/local.properties
+agents/android/keystore.properties
+agents/android/*.keystore
+agents/android/*.jks
+agents/android/captures/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.pem
+*.key
+certs/*.key
+certs/*.crt
+
+# Backups
+*.bak
+*.old

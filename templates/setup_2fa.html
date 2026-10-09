@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — 2FA{% endblock %}
+{% block heading %}TWO-FACTOR AUTH{% endblock %}
+
+{% block body %}
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Scan This QR</h2>
+    <p style="color:var(--dim);font-size:12px">
+      Scan with Google Authenticator, Authy, or any TOTP app.
+    </p>
+    <div style="background:#fff;padding:12px;border-radius:4px;display:inline-block;margin:14px 0">
+      {{ qr_svg|safe }}
+    </div>
+    <p style="color:var(--dim);font-size:11px">
+      Or enter manually: <code style="color:var(--cyan)">{{ secret }}</code>
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Enter the 6-digit code</h2>
+    {% if error %}<p style="color:var(--red)">{{ error }}</p>{% endif %}
+    <form method="post" action="{{ url_for('enable_2fa') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ csrf_token() }}
+      <input type="hidden" name="secret" value="{{ secret }}">
+      <div style="margin-bottom:12px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">CODE FROM APP</label>
+        <input name="code" inputmode="numeric" maxlength="6" required autofocus>
+      </div>
+      <button type="submit">▸ Enable 2FA</button>
+    </form>
+
+    {% if enabled %}
+    <hr style="margin:20px 0">
+    <form method="post" action="{{ url_for('disable_2fa') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ csrf_token() }}
+      <button type="submit" style="border-color:var(--red);color:var(--red)">Disable 2FA</button>
+    </form>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

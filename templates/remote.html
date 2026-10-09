@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Remote Commands{% endblock %}
+{% block heading %}REMOTE COMMANDS{% endblock %}
+
+{% block body %}
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Dispatch Command</h2>
+    <form method="post" action="{{ url_for('remote_send') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">DEVICE</label>
+        <select name="device_id" required>
+          <option value="">— select —</option>
+          {% for d in devices %}
+          <option value="{{ d['id'] }}">{{ d['name'] }} ({{ d['platform'] }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">COMMAND</label>
+        <select name="cmd" required>
+          <option value="ping">ping</option>
+          <option value="lock">lock</option>
+          <option value="restart">restart</option>
+          <option value="shutdown">shutdown</option>
+          <option value="sysinfo">sysinfo</option>
+          <option value="screenshot">screenshot</option>
+          <option value="settings">open settings</option>
+          <option value="open_url">open URL (payload)</option>
+          <option value="launch">launch app (payload)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">PAYLOAD (optional)</label>
+        <input name="payload" placeholder="https://example.com or /usr/bin/firefox">
+      </div>
+      <button type="submit">▸ Send Command</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Recent Commands ({{ recent|length }})</h2>
+    {% if recent and recent|length > 0 %}
+    <table>
+      <thead><tr><th>Time</th><th>Device</th><th>Cmd</th><th>Status</th><th>Result</th><th></th></tr></thead>
+      <tbody>
+        {% for r in recent %}
+        <tr>
+          <td style="color:var(--dim);font-size:10px">{{ r['created_at'] }}</td>
+          <td>{{ r['device_name'] or '—' }}</td>
+          <td style="color:var(--cyan)">{{ r['cmd'] }}</td>
+          <td>
+            {% if r['status']=='done' %}<span class="pill online">done</span>
+            {% elif r['status']=='failed' %}<span class="pill danger">failed</span>
+            {% elif r['status']=='sent' %}<span class="pill warn">sent</span>
+            {% else %}<span class="pill offline">queued</span>{% endif %}
+          </td>
+          <td style="font-size:11px;color:var(--dim)">{{ (r['result'] or '')[:60] }}</td>
+          <td style="text-align:right">
+            <form method="post" action="{{ url_for('remote_delete', cid=r['id']) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+              <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No commands sent yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

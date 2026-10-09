@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GawdZilla — Access</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cyberpunk.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>◤ GAWDZILLA</h1>
+    <div class="sub">ADMIN ACCESS TERMINAL</div>
+
+    {% if err %}<div class="err">{{ err }}</div>{% endif %}
+
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+      <div class="field">
+        <label>Username</label>
+        <input name="username" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label>2FA Code (optional)</label>
+        <input name="totp" inputmode="numeric" autocomplete="one-time-code">
+      </div>
+      <button type="submit">▸ Enter</button>
+    </form>
+
+    <div class="footer">Created by <b>MiSFiT SeCuRiTY</b></div>
+  </div>
+</div>
+</body>
+</html>

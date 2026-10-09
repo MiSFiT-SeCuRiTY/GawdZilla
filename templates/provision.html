@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Provision{% endblock %}
+{% block heading %}DEVICE OWNER PROVISIONING{% endblock %}
+
+{% block body %}
+
+<div class="card">
+  <h2>What is Device Owner mode?</h2>
+  <p style="color:var(--text);font-size:12px;line-height:1.7">
+    Device Owner is Android's official mechanism to make a management app
+    uninstall-proof. When set:
+  </p>
+  <ul style="color:var(--dim);font-size:12px;margin-left:20px;line-height:1.7">
+    <li>Child <b>cannot uninstall</b> GawdZilla Agent</li>
+    <li>Child <b>cannot clear</b> app data</li>
+    <li>Child <b>cannot disable</b> Device Admin</li>
+    <li>Silent app hide/unhide works</li>
+    <li>A permanent notification is <b>always visible</b> — required by Android</li>
+  </ul>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>How to provision</h2>
+  <p style="color:var(--text);font-size:12px">
+    Pick a fresh enrollment token below and follow one of these methods on the phone.
+  </p>
+
+  <h3 style="color:var(--cyan);font-size:12px;letter-spacing:.15em;margin-top:20px;text-transform:uppercase">Method A — ADB on a fresh phone</h3>
+  <pre style="background:#05050a;border:1px solid var(--border);padding:10px;border-radius:4px;font-size:11px;color:var(--green);overflow-x:auto"># no accounts on the phone
+adb install GawdZilla-agent.apk
+adb shell dpm set-device-owner com.misfit.gawdzilla/.DeviceAdminReceiver</pre>
+
+  <h3 style="color:var(--cyan);font-size:12px;letter-spacing:.15em;margin-top:20px;text-transform:uppercase">Method B — QR during factory reset setup</h3>
+  <ol style="color:var(--dim);font-size:12px;margin-left:20px;line-height:1.8">
+    <li>Factory reset the phone</li>
+    <li>At the "Welcome" screen, tap 6 times anywhere</li>
+    <li>Connect to Wi-Fi</li>
+    <li>QR scanner appears</li>
+    <li>Generate the QR on the Build page (next block)</li>
+  </ol>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>Available Tokens ({{ tokens|length }})</h2>
+  {% if tokens %}
+  <table>
+    <thead><tr><th>Token</th><th>Platform</th><th>Expires</th></tr></thead>
+    <tbody>
+      {% for t in tokens %}
+      <tr>
+        <td style="color:var(--cyan)">{{ t['token'] }}</td>
+        <td>{{ t['platform'] or '—' }}</td>
+        <td style="color:var(--dim)">{{ t['expires_at'] or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--dim)">No active tokens. Create one from the Builder page.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

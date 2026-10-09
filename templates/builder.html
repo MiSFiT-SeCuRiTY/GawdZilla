@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Builder{% endblock %}
+{% block heading %}◤ BUILDER — NEW BUILD{% endblock %}
+
+{% block body %}
+
+{% if request.args.get('built') %}
+<div class="card" style="border-color:var(--pink);box-shadow:0 0 20px rgba(255,43,214,.25);margin-bottom:14px">
+  <h2 style="color:var(--pink)">Build complete</h2>
+  <p>Package: <b style="color:var(--cyan)">{{ request.args.get('built') }}</b></p>
+  <p style="color:var(--dim)">Scroll down to <b style="color:var(--pink)">Recent Builds</b> to download.</p>
+</div>
+{% endif %}
+
+<div class="grid cols-2">
+
+  <div class="card" style="border-color:var(--pink)">
+    <h2 style="color:var(--pink)">Build Android Agent</h2>
+
+    <form method="post" action="{{ url_for('builder_create') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">APP NAME</label>
+        <input name="app_name" value="GawdZilla Agent" required>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">ANDROID VERSION</label>
+        <select name="os_version">
+          {% for v in os_versions %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">ARCHITECTURE</label>
+        <select name="arch">
+          {% for v in archs %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">CHILD</label>
+        <select name="child_id">
+          <option value="">— unassigned —</option>
+          {% for c in children %}
+          <option value="{{ c['id'] }}">{{ c['name'] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">SERVER URL</label>
+        <input name="server_url" value="{{ default_server }}">
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:8px">CAPABILITIES</label>
+        <div style="display:grid;grid-template-columns:1fr;gap:6px">
+          {% for cid, label in caps %}
+          <label style="color:var(--text);font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:4px">
+            <input type="checkbox" name="capabilities" value="{{ cid }}" style="width:auto;margin-right:8px">
+            {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="display:block;color:var(--dim);font-size:10px;letter-spacing:.2em;margin-bottom:4px">NOTES (optional)</label>
+        <input name="notes" placeholder="e.g. Emma's school phone">
+      </div>
+
+      <button type="submit" style="border-color:var(--pink);color:var(--pink);width:100%;padding:10px">
+        ⚙ BUILD ENROLLMENT PACKAGE
+      </button>
+
+    </form>
+  </div>
+
+  <div class="card" style="border-color:var(--pink)">
+    <h2 style="color:var(--pink)">Recent Builds ({{ builds|length }})</h2>
+    {% if builds and builds|length > 0 %}
+    <table>
+      <thead>
+        <tr><th>Filename</th><th>Android</th><th>Size</th><th>SHA-256</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for b in builds %}
+        <tr>
+          <td style="font-size:11px;color:var(--cyan)">{{ b['filename'] }}</td>
+          <td>{{ b['os_version'] }}<br><span style="color:var(--dim);font-size:10px">{{ b['arch'] }}</span></td>
+          <td>{{ human_size(b['size_bytes'] or 0) }}</td>
+          <td style="font-size:10px;color:var(--dim)">{{ (b['sha256'] or '')[:16] }}…</td>
+          <td style="text-align:right;white-space:nowrap">
+            <a href="{{ url_for('builder_download', filename=b['filename']) }}">
+              <button type="button" style="border-color:var(--cyan);color:var(--cyan);padding:2px 8px;font-size:10px">GET</button>
+            </a>
+            <form method="post" action="{{ url_for('builder_delete', bid=b['id']) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ csrf_token() }}
+              <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--dim)">No builds yet. Fill the form and click <b style="color:var(--pink)">BUILD ENROLLMENT PACKAGE</b>.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Settings{% endblock %}
+{% block heading %}SETTINGS{% endblock %}
+
+{% block body %}
+<div class="grid cols-2">
+
+  <div class="card">
+    <h2>Account</h2>
+    <table>
+      <tbody>
+        <tr><td style="color:var(--dim)">Username</td><td>{{ me['username'] }}</td></tr>
+        <tr><td style="color:var(--dim)">Role</td><td>{{ me['role'] }}</td></tr>
+        <tr><td style="color:var(--dim)">Created</td><td>{{ me['created_at'] }}</td></tr>
+        <tr><td style="color:var(--dim)">Last Login</td><td>{{ me['last_login'] or '—' }}</td></tr>
+        <tr><td style="color:var(--dim)">2FA</td><td>
+          {% if me['totp_secret'] %}<span class="pill online">ENABLED</span>
+          {% else %}<span class="pill offline">OFF</span>{% endif %}
+        </td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{{ url_for('change_password') }}"><button type="button">▸ Change Password</button></a>
+      <a href="{{ url_for('setup_2fa') }}"><button type="button">▸ Setup 2FA</button></a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Server</h2>
+    <table>
+      <tbody>
+        <tr><td style="color:var(--dim)">Product</td><td>GawdZilla v1.0.0</td></tr>
+        <tr><td style="color:var(--dim)">Author</td><td>MiSFiT SeCuRiTY</td></tr>
+        <tr><td style="color:var(--dim)">Port</td><td>7777</td></tr>
+        <tr><td style="color:var(--dim)">Database</td><td>data/gawdzilla.db</td></tr>
+        <tr><td style="color:var(--dim)">CSRF</td><td><span class="pill online">ON</span></td></tr>
+        <tr><td style="color:var(--dim)">Rate limit</td><td><span class="pill online">ON</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

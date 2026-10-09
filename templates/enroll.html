@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GawdZilla — Enrollment</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cyberpunk.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card" style="width:460px">
+    <h1>◤ GAWDZILLA AGENT</h1>
+    <div class="sub">DEVICE ENROLLMENT</div>
+
+    {% if token %}
+      <div style="text-align:center;margin:16px 0">
+        <div style="color:var(--dim);font-size:11px;letter-spacing:.2em;margin-bottom:6px">ENROLLMENT TOKEN</div>
+        <div style="color:var(--cyan);font-size:18px;letter-spacing:.15em;text-shadow:var(--glow)">{{ token }}</div>
+      </div>
+      <hr>
+      <div style="color:var(--text);font-size:12px;line-height:1.7">
+        <p><b style="color:var(--pink)">This device will be managed by your parent.</b></p>
+        <p>The parent will be able to see:</p>
+        <ul style="margin-left:18px;color:var(--dim)">
+          <li>App usage &amp; screen time</li>
+          <li>Website history &amp; blocked sites</li>
+          <li>Location (only while consent is active)</li>
+          <li>Device health (battery, storage, network)</li>
+        </ul>
+        <p style="margin-top:10px">A persistent notification will always show when the agent is active.</p>
+      </div>
+      <hr>
+      <p style="color:var(--dim);font-size:11px;text-align:center">
+        Download and install the agent for your platform.
+        The parent controls which capabilities are enabled.
+      </p>
+    {% else %}
+      <div class="err">Missing or invalid enrollment token.</div>
+      <p style="color:var(--dim);font-size:11px;text-align:center;margin-top:12px">
+        Ask your parent for a valid enrollment link.
+      </p>
+    {% endif %}
+
+    <div class="footer">Created by <b>MiSFiT SeCuRiTY</b></div>
+  </div>
+</div>
+</body>
+</html>

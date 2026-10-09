@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}GawdZilla{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cyberpunk.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">◤ GAWDZILLA<span class="ver">v1.0</span></div>
+
+    <div class="side-group">
+      <div class="side-label">Operations</div>
+      <a class="side-item {% if request.endpoint=='admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">▸ DASH</a>
+      <a class="side-item {% if request.endpoint=='devices_page' %}active{% endif %}" href="{{ url_for('devices_page') }}">▸ DEVICES</a>
+      <a class="side-item {% if request.endpoint=='children_page' %}active{% endif %}" href="{{ url_for('children_page') }}">▸ CHILDREN</a>
+      <a class="side-item {% if request.endpoint=='policies_page' %}active{% endif %}" href="{{ url_for('policies_page') }}">▸ POLICIES</a>
+      <a class="side-item {% if request.endpoint=='monitor_page' %}active{% endif %}" href="{{ url_for('monitor_page') }}">▸ MONITOR</a>
+      <a class="side-item {% if request.endpoint=='location_page' %}active{% endif %}" href="{{ url_for('location_page') }}">▸ LOCATION</a>
+      <a class="side-item {% if request.endpoint=='map_page' %}active{% endif %}" href="{{ url_for('map_page') }}">▸ MAP</a>
+      <a class="side-item {% if request.endpoint=='charts_page' %}active{% endif %}" href="{{ url_for('charts_page') }}">▸ CHARTS</a>
+      <a class="side-item {% if request.endpoint=='apps_page' %}active{% endif %}" href="{{ url_for('apps_page') }}">▸ APPS</a>
+      <a class="side-item {% if request.endpoint=='web_page' %}active{% endif %}" href="{{ url_for('web_page') }}">▸ WEB</a>
+      <a class="side-item {% if request.endpoint=='sync_page' %}active{% endif %}" href="{{ url_for('sync_page') }}">▸ SYNC</a>
+      <a class="side-item {% if request.endpoint=='remote_page' %}active{% endif %}" href="{{ url_for('remote_page') }}">▸ REMOTE</a>
+      <a class="side-item {% if request.endpoint=='terminal_page' %}active{% endif %}" href="{{ url_for('terminal_page') }}">▸ TERMINAL</a>
+    </div>
+
+    <div class="side-divider"></div>
+
+    <div class="side-group">
+      <div class="side-label">Builder</div>
+      <a class="side-item builder {% if request.endpoint=='builder_page' %}active{% endif %}" href="{{ url_for('builder_page') }}">▸ NEW BUILD</a>
+      <a class="side-item builder {% if request.endpoint=='builder_history' %}active{% endif %}" href="{{ url_for('builder_history') }}">▸ HISTORY</a>
+      <a class="side-item builder {% if request.endpoint=='builder_tokens' %}active{% endif %}" href="{{ url_for('builder_tokens') }}">▸ TOKENS</a>
+    </div>
+
+    <div class="side-divider"></div>
+
+    <div class="side-group">
+      <div class="side-label">System</div>
+      <a class="side-item {% if request.endpoint=='audit_page' %}active{% endif %}" href="{{ url_for('audit_page') }}">▸ AUDIT</a>
+      <a class="side-item {% if request.endpoint=='backup_page' %}active{% endif %}" href="{{ url_for('backup_page') }}">▸ BACKUP</a>
+      <a class="side-item {% if request.endpoint=='settings_page' %}active{% endif %}" href="{{ url_for('settings_page') }}">▸ SETTINGS</a>
+      <a class="side-item" href="{{ url_for('logout') }}">▸ LOGOUT</a>
+    </div>
+
+    <div class="status-box">
+      <div><span class="ok">●</span> SERVER ONLINE</div>
+      <div class="cursor"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">{% block heading %}CONTROL PANEL{% endblock %}</div>
+      <div class="user">
+        <b>{{ current_user.username }}</b>
+        <span class="pill online">ADMIN</span>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for m in messages %}
+        <div class="card" style="border-color:var(--amber);margin-bottom:12px">
+          <span style="color:var(--amber)">⚠ {{ m }}</span>
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block body %}{% endblock %}
+  </main>
+</div>
+
+<!-- Toast container -->
+<div id="toastBox" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:340px"></div>
+
+<script>
+(function(){
+  var box = document.getElementById('toastBox');
+
+  function toast(level, title, body){
+    var colors = {
+      info:   { border: '#00f0ff', text: '#00f0ff' },
+      warn:   { border: '#ffb000', text: '#ffb000' },
+      danger: { border: '#ff2b5e', text: '#ff2b5e' }
+    };
+    var c = colors[level] || colors.info;
+
+    var el = document.createElement('div');
+    el.style.background = '#0d0d14';
+    el.style.border = '1px solid ' + c.border;
+    el.style.boxShadow = '0 0 12px ' + c.border + '55';
+    el.style.borderRadius = '4px';
+    el.style.padding = '12px 16px';
+    el.style.fontFamily = "'JetBrains Mono',monospace";
+    el.style.fontSize = '12px';
+    el.style.color = '#c8c8d8';
+    el.innerHTML = '<div style="color:' + c.text + ';font-weight:bold;margin-bottom:4px">' +
+                   title + '</div>' + (body || '');
+
+    box.appendChild(el);
+    setTimeout(() => { el.style.transition = 'opacity .5s'; el.style.opacity = '0'; }, 8000);
+    setTimeout(() => el.remove(), 9000);
+  }
+
+  try {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var ws = new WebSocket(proto + '//' + location.host + '/ws/live');
+    ws.onmessage = function(m){
+      try {
+        var ev = JSON.parse(m.data);
+        if (ev.kind === 'alert') {
+          toast(ev.payload.level || 'info', ev.payload.title, ev.payload.body);
+        } else if (ev.kind === 'geofence') {
+          toast('info', 'Geofence ' + ev.payload.event, ev.payload.fence);
+        } else if (ev.kind === 'media_camera') {
+          toast('info', 'Camera capture received', ev.payload.file);
+        } else if (ev.kind === 'media_mic') {
+          toast('info', 'Microphone capture received', ev.payload.file);
+        }
+      } catch(e){}
+    };
+  } catch(e){}
+})();
+</script>
+</body>
+</html>

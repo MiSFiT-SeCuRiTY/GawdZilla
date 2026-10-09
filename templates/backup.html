@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}GawdZilla — Backup{% endblock %}
+{% block heading %}BACKUP & EXPORT{% endblock %}
+
+{% block body %}
+
+<div class="card" style="margin-bottom:14px">
+  <div class="tab-row">
+    <a href="{{ url_for('backup_page', tab='db') }}"><button type="button" style="{% if tab=='db' %}background:var(--cyan);color:#000{% endif %}">Database Backups</button></a>
+    <a href="{{ url_for('backup_page', tab='export') }}"><button type="button" style="{% if tab=='export' %}background:var(--cyan);color:#000{% endif %}">Export JSON</button></a>
+    <a href="{{ url_for('backup_page', tab='import') }}"><button type="button" style="{% if tab=='import' %}background:var(--cyan);color:#000{% endif %}">Import JSON</button></a>
+  </div>
+</div>
+
+{% if tab == 'db' %}
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>Actions</h2>
+      <form method="post" action="{{ url_for('backup_create') }}" style="margin-bottom:10px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" style="width:100%;padding:10px">▸ Create Backup Now</button>
+      </form>
+      <a href="{{ url_for('backup_download_all') }}">
+        <button type="button" style="width:100%;padding:10px;border-color:var(--pink);color:var(--pink)">▸ Download All as ZIP</button>
+      </a>
+      <p style="color:var(--dim);font-size:11px;margin-top:12px">
+        Auto-backups run every {{ interval_hours }}h. Retention: {{ retain_auto }} auto · {{ retain_manual }} manual.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Backups ({{ backups|length }})</h2>
+      {% if backups and backups|length > 0 %}
+      <table>
+        <thead><tr><th>Filename</th><th>Size</th><th></th></tr></thead>
+        <tbody>
+          {% for b in backups %}
+          <tr>
+            <td style="color:var(--cyan);font-size:11px">{{ b.filename }}</td>
+            <td>{{ (b.size_bytes / 1024) | round(1) }} KB</td>
+            <td style="text-align:right;white-space:nowrap">
+              <a href="{{ url_for('backup_download', filename=b.filename) }}">
+                <button type="button" style="padding:2px 8px;font-size:10px">GET</button>
+              </a>
+              <form method="post" action="{{ url_for('backup_restore', filename=b.filename) }}" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="border-color:var(--amber);color:var(--amber);padding:2px 8px;font-size:10px">RESTORE</button>
+              </form>
+              <form method="post" action="{{ url_for('backup_delete', filename=b.filename) }}" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="border-color:var(--red);color:var(--red);padding:2px 8px;font-size:10px">DEL</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color:var(--dim)">No backups yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+{% elif tab == 'export' %}
+  <div class="card">
+    <h2>Export Selected Tables to JSON</h2>
+    <form method="post" action="{{ url_for('backup_export_json') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0">
+        {% for t in all_tables %}
+        <label style="color:var(--text);font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:4px">
+          <input type="checkbox" name="tables" value="{{ t }}" checked style="width:auto;margin-right:6px">
+          {{ t }}
+        </label>
+        {% endfor %}
+      </div>
+      <button type="submit" style="width:100%;padding:10px">▸ Download JSON</button>
+    </form>
+  </div>
+
+{% else %}
+  <div class="card">
+    <h2>Import from JSON</h2>
+    <p style="color:var(--amber);font-size:12px;margin:14px 0">
+      ⚠ Import overwrites selected tables. A pre-restore snapshot is created automatically.
+      Parents are never overwritten on import.
+    </p>
+    <form method="post" action="{{ url_for('backup_import_json') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="file" accept=".json" required style="margin-bottom:10px">
+      <button type="submit" name="mode" value="dry" style="width:100%;padding:10px;border-color:var(--amber);color:var(--amber);margin-bottom:8px">
+        ▸ Dry Run (preview only)
+      </button>
+      <button type="submit" name="mode" value="apply" style="width:100%;padding:10px;border-color:var(--red);color:var(--red)">
+        ⚠ Apply Import
+      </button>
+    </form>
+
+    {% if report %}
+      <h3 style="color:var(--cyan);margin-top:20px;letter-spacing:.15em;text-transform:uppercase">Report</h3>
+      <table style="margin-top:10px">
+        <thead><tr><th>Table</th><th>Result</th></tr></thead>
+        <tbody>
+          {% for table, result in report.items() %}
+          <tr>
+            <td>{{ table }}</td>
+            <td style="color:var(--dim);font-size:11px">{{ result }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}
