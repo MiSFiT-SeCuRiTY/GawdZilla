@@ -11,6 +11,8 @@ Self-hosted · Cyberpunk dashboard · No third-party cloud · No telemetry · AG
 
 ---
 
+<img width="1668" height="998" alt="Screenshot_2026-10-09_12_13_27" src="https://github.com/user-attachments/assets/582c4cdc-d10a-461b-947b-6e29cb1ebb8c" />
+
 ## 📖 About
 
 GawdZilla is a self-hosted parental-control platform. A parent runs the control panel on their own PC, home server, or VPS and enrolls Android devices used by their minor children.
